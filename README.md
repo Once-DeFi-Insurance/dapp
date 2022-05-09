@@ -1,6 +1,6 @@
 # Once DEfi Insurance 
 
-# 🏗 Dapp Build using [Scaffold-Ethereum] (https://github.com/scaffold-eth/scaffold-eth)
+🏗 Dapp Build using [Scaffold-Ethereum] (https://github.com/scaffold-eth/scaffold-eth)
 
 
 
@@ -11,7 +11,7 @@ Prerequisites: [Node (v16 LTS)](https://nodejs.org/en/download/) plus [Yarn](htt
 > clone/fork 
 
 ```bash
-git clone https://github.com/scaffold-eth/scaffold-eth.git
+git clone https://github.com/Once-DeFi-Insurance/dapp
 ```
 
 > install and start your 👷‍ Hardhat chain:
