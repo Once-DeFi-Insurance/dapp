@@ -1,6 +1,6 @@
 # Once Defi Insurance 
 
-🏗 Dapp Build using [Scaffold-Ethereum] (https://github.com/scaffold-eth/scaffold-eth)
+-🏗 Dapp Build using [Scaffold-Ethereum] (https://github.com/scaffold-eth/scaffold-eth)
 
 
 
