@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 
-//This contract aggregate the creation of nfts and the marketplace for the Once protocol. Basically you can mint a NFT, sell it (creating a market item ) or buy an NFT.
-//This is just the backbone code, we will need to add some specifications about the protocol like: who can buy nfts from Once? who can sell it ? etc.
-
+//This is the old contract -> It aggregates the nft token and the marketplace, we are not going to use it.abi
+//This is just for 
 
 contract OnceNFT is ERC721URIStorage {
     using Counters for Counters.Counter;
@@ -58,7 +57,8 @@ contract OnceNFT is ERC721URIStorage {
     function getListingPrice() public view returns (uint256) {
       return listingPrice;
     }
-        function createMarketItem(
+
+    function createMarketItem(
       uint256 tokenId,
       uint256 price
     ) private {
@@ -83,7 +83,8 @@ contract OnceNFT is ERC721URIStorage {
       );
     }
 
-    // Mints a token and lists it in the marketplace 
+
+    // Mint a token and lists it in the marketplace 
     function createToken(string memory tokenURI, uint256 price) public payable returns (uint) {
       _tokenIds.increment();
       uint256 newTokenId = _tokenIds.current();
@@ -144,7 +145,7 @@ contract OnceNFT is ERC721URIStorage {
       return items;
     }
 
-    /* Returns only items that a user has purchased */
+    // Returns only items that a user has purchased 
     function fetchMyNFTs() public view returns (MarketItem[] memory) {
       uint totalItemCount = _tokenIds.current();
       uint itemCount = 0;
