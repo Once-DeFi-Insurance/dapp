@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 
+//DISREGARD THIS SMART-CONTRACT
 //This is the old contract -> It aggregates the nft token and the marketplace, we are not going to use it.abi
-//This is just for 
 
 contract OnceNFT is ERC721URIStorage {
     using Counters for Counters.Counter;
