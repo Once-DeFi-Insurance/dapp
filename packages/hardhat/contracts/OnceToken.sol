@@ -58,7 +58,7 @@ contract OnceToken is ERC721Enumerable{
   //function for checking if address is granted for minting
   function exists1(address _address) internal view returns (bool) {
     uint count = _insuredIds.current();
-    for (uint i = 0; i < count; i++) {
+    for (uint i = 0; i < count + 1; i++) {
         if (Insureds[i].insured == _address) {
             return true;
         }
@@ -81,7 +81,7 @@ contract OnceToken is ERC721Enumerable{
   constructor () ERC721("OnceToken", "ONCE") {}
 
   function mint(string memory uri) public returns (uint256){
-    require(exists1(msg.sender) == true);
+    require(exists1(msg.sender) == true, "You are not an allowed insured");
     _tokenIds.increment();
     uint256 newItemId = _tokenIds.current();
     _safeMint(msg.sender, newItemId);
@@ -103,7 +103,7 @@ contract OnceToken is ERC721Enumerable{
   }
 
   function setMarketplace(address market) public {
-    //require(msg.sender ==);
+    require(msg.sender == ownerGovernance, "Only the DAO governance can set the marketplace");
     marketplace = market;
   }
 
