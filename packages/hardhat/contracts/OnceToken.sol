@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-//to do: For a user be able to mint, he needs to be approved. So we need to set some modifier where only
-//approved users can mint nfts.
+//to do: How to integrate in the minting function an Id card (but with privacy), so we know when someone dies but without exposing who it is to the blockchain?
+//set a function: When the 10/5 years has passed and the person has not died, the payout backed is returned to the Insurance company.
+//set a function: When the insured dies, who owns the NFT is paid with the total amount backed.
 
 contract OnceToken is ERC721Enumerable{
   using Counters for Counters.Counter;
@@ -72,15 +73,22 @@ contract OnceToken is ERC721Enumerable{
     uint256 id;
     address creator;
     string uri;//metadata url
+    //premium for insurance
+    uint256 premium;
+    //boolean for knowing if the nft was backed or not:
+    bool backed;
+    //the amount of money the insured wants to be backed for his premium, in case of death who owns the nfts can claim the reward:
+    uint256 payout;
   }
 
-  event NFTMinted (uint256 id, address creator, string uri);
+  event NFTMinted (uint256 id, address creator, string uri, uint256 premium, bool backed, uint256 payout);
 
   mapping(uint256 => Item) public Items; //id => Item
 
   constructor () ERC721("OnceToken", "ONCE") {}
 
-  function mint(string memory uri) public returns (uint256){
+  //when minting the user pass an uri, the premium (its the msg.value) and the amount the wants in case of dead (amountBacked)
+  function mint(string memory uri, uint256 _payout) public payable returns (uint256){
     require(exists1(msg.sender) == true, "You are not an allowed insured");
     _tokenIds.increment();
     uint256 newItemId = _tokenIds.current();
@@ -90,11 +98,25 @@ contract OnceToken is ERC721Enumerable{
     Items[newItemId] = Item({
       id: newItemId, 
       creator: msg.sender,
-      uri: uri
+      uri: uri,
+      premium: msg.value,
+      backed: false,
+      payout: _payout
     });
 
-    emit NFTMinted(Items[newItemId].id, Items[newItemId].creator, Items[newItemId].uri);
+    emit NFTMinted(Items[newItemId].id, Items[newItemId].creator, Items[newItemId].uri, Items[newItemId].premium, Items[newItemId].backed, Items[newItemId].payout);
     return newItemId;
+  }
+
+  //now the Insurance company (or a single person) can do the payout payment (so the contract can allocate it into a liquidity pool for example) and "buy" the assurance:
+  function buyInsurance(uint256 tokenId) public payable {
+    require(msg.value == Items[tokenId].payout, "Value for backing the insurance incorrect");
+    require(Items[tokenId].backed == false, "This insurance was already backed");
+    Items[tokenId].backed = true;
+
+    //transfer the premium amount for the Insurance company:
+    (bool sent, ) = msg.sender.call{value: msg.value}("");
+    require(sent, "Failed to send Ether/Matic");
   }
 
   function tokenURI(uint256 tokenId) public view override returns (string memory) {
