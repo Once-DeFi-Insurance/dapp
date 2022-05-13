@@ -123,7 +123,8 @@ contract OnceMarketplace is OnceToken {
     //getPayout is triggered when the insured dies - who owns the nft will get the payout:
     function getPayout(uint256 _tokenId) public {
     require(msg.sender == ownerGovernance, "Only the ownerGovernance can withdraw!!");
-    uint256 payout = fetchPayoutAmount(_tokenId);
+    uint256 payout = token.fetchPayoutAmount(_tokenId);
+
 
     //transfer the payout amount to the Insurance company:
     (bool sent, ) = payable(token.ownerOf(_tokenId)).call{value: payout}("");
