@@ -17,6 +17,8 @@ contract OnceToken is ERC721Enumerable{
   Counters.Counter private _insuredIds;
   address public marketplace;
 
+  constructor () ERC721("OnceToken", "ONCE") {}
+
   //setting a governance oracle/DAO that will grants access for minting Once NFTs
   //So who pass the Once KYC system will have the permission for minting:
   address payable ownerGovernance;
@@ -86,7 +88,7 @@ contract OnceToken is ERC721Enumerable{
 
   mapping(uint256 => Item) public Items; //id => Item
 
-  constructor () ERC721("OnceToken", "ONCE") {}
+  
 
   //when minting the user pass the uri, the premium (its the msg.value) and the amount the wants in case of dead (payout)
   function mint(string memory uri, uint256 _payout) public payable returns (uint256){
