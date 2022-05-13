@@ -34,6 +34,7 @@ contract OnceToken is ERC721Enumerable{
   //So here, with the the governance address, we grant for the user the possibility to mint Once NFTs (after checking the KYC):
   function grantInsuranceMint(address _address) public returns(uint256){
     require(msg.sender == ownerGovernance, "Only the DAO governance can set this role");
+    require(exists1(_address) == false, "This address already is granted");
     _insuredIds.increment();
     uint256 newInsuredId = _insuredIds.current();
     Insureds[newInsuredId] = Insured ({
@@ -87,7 +88,7 @@ contract OnceToken is ERC721Enumerable{
 
   constructor () ERC721("OnceToken", "ONCE") {}
 
-  //when minting the user pass an uri, the premium (its the msg.value) and the amount the wants in case of dead (amountBacked)
+  //when minting the user pass the uri, the premium (its the msg.value) and the amount the wants in case of dead (payout)
   function mint(string memory uri, uint256 _payout) public payable returns (uint256){
     require(exists1(msg.sender) == true, "You are not an allowed insured");
     _tokenIds.increment();
@@ -113,9 +114,10 @@ contract OnceToken is ERC721Enumerable{
     require(msg.value == Items[tokenId].payout, "Value for backing the insurance incorrect");
     require(Items[tokenId].backed == false, "This insurance was already backed");
     Items[tokenId].backed = true;
+    uint256 _premium = Items[tokenId].premium;
 
     //transfer the premium amount for the Insurance company:
-    (bool sent, ) = msg.sender.call{value: msg.value}("");
+    (bool sent, ) = payable(msg.sender).call{value: _premium}("");
     require(sent, "Failed to send Ether/Matic");
   }
 
