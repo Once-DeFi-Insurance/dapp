@@ -3,7 +3,11 @@ pragma solidity ^0.8.0;
 
 import "./OnceToken.sol";
 
-contract OnceMarketplace {
+//to do: How to integrate in the minting function an Id card (but with privacy), so we know when someone dies but without exposing who it is to the blockchain?
+//set a function: When the 10/5 years has passed and the person has not died, the payout backed is returned to the Insurance company.
+//set a function: When the insured dies, who owns the NFT is paid with the total amount backed. -> this function can be set into the marketplace contract?
+
+contract OnceMarketplace is OnceToken {
   OnceToken private token;
 
   //With the listingPrice we can set a lot of things, like paying comissions for the first owner of that nft or setting a fee for the Once pool
@@ -13,6 +17,9 @@ contract OnceMarketplace {
   //Setting the owner address so it can be paid every time a NFT is traded/listed in the marketplace (basicaly a comission for our Once pool)
   //I believe in the future this address will be a DAO
   address payable ownerPool;
+
+  //the governanceAddress:
+  address payable ownerGovernance;
 
   // Updates the listing price of the contract (this only can be set by the pool owner) 
   function updateListingPrice(uint _listingPrice) public payable {
@@ -111,5 +118,15 @@ contract OnceMarketplace {
 
   function totalItemsForSale() external view returns(uint256) {
     return itemsForSale.length;
+  }
+
+    //getPayout is triggered when the insured dies - who owns the nft will get the payout:
+    function getPayout(uint256 _tokenId) public {
+    require(msg.sender == ownerGovernance, "Only the ownerGovernance can withdraw!!");
+    uint256 payout = fetchPayoutAmount(_tokenId);
+
+    //transfer the payout amount to the Insurance company:
+    (bool sent, ) = payable(token.ownerOf(_tokenId)).call{value: payout}("");
+    require(sent, "Failed to send Ether/Matic");
   }
 }

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 //to do: How to integrate in the minting function an Id card (but with privacy), so we know when someone dies but without exposing who it is to the blockchain?
 //set a function: When the 10/5 years has passed and the person has not died, the payout backed is returned to the Insurance company.
-//set a function: When the insured dies, who owns the NFT is paid with the total amount backed.
+//set a function: When the insured dies, who owns the NFT is paid with the total amount backed. -> this function can be set into the marketplace contract.
 
 contract OnceToken is ERC721Enumerable{
   using Counters for Counters.Counter;
@@ -116,7 +116,7 @@ contract OnceToken is ERC721Enumerable{
     Items[tokenId].backed = true;
     uint256 _premium = Items[tokenId].premium;
 
-    //transfer the premium amount for the Insurance company:
+    //transfer the premium amount to the Insurance company:
     (bool sent, ) = payable(msg.sender).call{value: _premium}("");
     require(sent, "Failed to send Ether/Matic");
   }
@@ -124,6 +124,10 @@ contract OnceToken is ERC721Enumerable{
   function tokenURI(uint256 tokenId) public view override returns (string memory) {
     require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
     return Items[tokenId].uri;
+  }
+
+  function fetchPayoutAmount(uint256 tokenId) public view returns (uint256){
+    return Items[tokenId].payout;
   }
 
   function setMarketplace(address market) public {
