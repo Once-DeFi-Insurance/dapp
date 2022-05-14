@@ -1,6 +1,6 @@
 pragma solidity ^0.8.2;
 
-import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
+import "./PriceAware.sol";
 
 contract ExampleContractCustomUrls is PriceAware {
 

@@ -19,7 +19,7 @@ contract OnceMarketplace is OnceToken {
   address payable ownerPool;
 
   //the governanceAddress:
-  address payable ownerGovernance;
+  address payable ownerGovernance2;
 
   // Updates the listing price of the contract (this only can be set by the pool owner) 
   function updateListingPrice(uint _listingPrice) public payable {
@@ -122,7 +122,7 @@ contract OnceMarketplace is OnceToken {
 
     //getPayout is triggered when the insured dies - who owns the nft will get the payout:
     function getPayout(uint256 _tokenId) public {
-    require(msg.sender == ownerGovernance, "Only the ownerGovernance can withdraw!!");
+    require(msg.sender == ownerGovernance2, "Only the ownerGovernance can withdraw!!");
     uint256 payout = token.fetchPayoutAmount(_tokenId);
 
 
