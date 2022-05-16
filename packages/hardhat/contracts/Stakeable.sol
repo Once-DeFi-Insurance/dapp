@@ -1,181 +1,153 @@
 // SPDX-License-Identifier: MIT
+// Creator: andreitoma8
 pragma solidity ^0.8.4;
 
-/**
-* @notice Stakeable is a contract who is ment to be inherited by other contract that wants Staking capabilities
-*/
-contract Stakeable {
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+//THIS IS THE TIME TOKEN -> STAKEABLE TOKEN.
 
-    /**
-    * @notice Constructor since this contract is not ment to be used without inheritance
-    * push once to stakeholders for it to work proplerly
-     */
-    constructor() {
-        // This push is needed so we avoid index 0 causing bug of index-1
-        stakeholders.push();
-    }
-    /**
-     * @notice
-     * A stake struct is used to represent the way we store stakes, 
-     * A Stake will contain the users address, the amount staked and a timestamp, 
-     * Since which is when the stake was made
-     */
-    struct Stake{
-        address user;
-        uint256 amount;
-        uint256 since;
-        // This claimable field is new and used to tell how big of a reward is currently available
-        uint256 claimable;
-    }
-    /**
-    * @notice Stakeholder is a staker that has active stakes
-     */
-    struct Stakeholder{
-        address user;
-        Stake[] address_stakes;
-        
-    }
-     /**
-     * @notice
-     * StakingSummary is a struct that is used to contain all stakes performed by a certain account
-     */ 
-     struct StakingSummary{
-         uint256 total_amount;
-         Stake[] stakes;
-     }
-
-    /**
-    * @notice 
-    *   This is a array where we store all Stakes that are performed on the Contract
-    *   The stakes for each address are stored at a certain index, the index can be found using the stakes mapping
-    */
-    Stakeholder[] internal stakeholders;
-    /**
-    * @notice 
-    * stakes is used to keep track of the INDEX for the stakers in the stakes array
-     */
-    mapping(address => uint256) internal stakes;
-    /**
-    * @notice Staked event is triggered whenever a user stakes tokens, address is indexed to make it filterable
-     */
-     event Staked(address indexed user, uint256 amount, uint256 index, uint256 timestamp);
-
-    /**
-     * @notice
-      rewardPerHour is 1000 because it is used to represent 0.001, since we only use integer numbers
-      This will give users 0.1% reward for each staked token / H
-     */
-    uint256 internal rewardPerHour = 1000;
-
-    /**
-    * @notice _addStakeholder takes care of adding a stakeholder to the stakeholders array
-     */
-    function _addStakeholder(address staker) internal returns (uint256){
-        // Push a empty item to the Array to make space for our new stakeholder
-        stakeholders.push();
-        // Calculate the index of the last item in the array by Len-1
-        uint256 userIndex = stakeholders.length - 1;
-        // Assign the address to the new index
-        stakeholders[userIndex].user = staker;
-        // Add index to the stakeHolders
-        stakes[staker] = userIndex;
-        return userIndex; 
+contract ERC20Stakeable is ERC20, ERC20Burnable, ReentrancyGuard {
+    // Staker info
+    struct Staker {
+        // The deposited tokens of the Staker
+        uint256 deposited;
+        // Last time of details update for Deposit
+        uint256 timeOfLastUpdate;
+        // Calculated, but unclaimed rewards. These are calculated each time
+        // a user writes to the contract.
+        uint256 unclaimedRewards;
     }
 
-    /**
-    * @notice
-    * _Stake is used to make a stake for an sender. It will remove the amount staked from the stakers account and place those tokens inside a stake container
-    * StakeID 
-    */
-    function _stake(uint256 _amount) internal{
-        // Simple check so that user does not stake 0 
-        require(_amount > 0, "Cannot stake nothing");
-        
+    //We havent decided how much we are going to set as APR, right?
+    // Rewards per hour. A fraction calculated as x/10.000.000 to get the percentage
+    uint256 public rewardsPerHour = 285; // 0.00285%/h or 25% APR
 
-        // Mappings in solidity creates all values, but empty, so we can just check the address
-        uint256 index = stakes[msg.sender];
-        // block.timestamp = timestamp of the current block in seconds since the epoch
-        uint256 timestamp = block.timestamp;
-        // See if the staker already has a staked index or if its the first time
-        if(index == 0){
-            // This stakeholder stakes for the first time
-            // We need to add him to the stakeHolders and also map it into the Index of the stakes
-            // The index returned will be the index of the stakeholder in the stakeholders array
-            index = _addStakeholder(msg.sender);
+    // Minimum amount to stake
+    uint256 public minStake = 1 * 10 ** 18;
+
+    // Compounding frequency limit in seconds
+    uint256 public compoundFreq = 14400; //4 hours
+
+    // Mapping of address to Staker info
+    mapping(address => Staker) internal stakers;
+
+    // Constructor function
+    constructor(string memory _name, string memory _symbol)
+        ERC20(_name, _symbol)
+    {
+
+        _mint(msg.sender, 1000000 * 10 ** 18);
+    }
+
+    // If address has no Staker struct, initiate one. If address already was a stake,
+    // calculate the rewards and add them to unclaimedRewards, reset the last time of
+    // deposit and then add _amount to the already deposited amount.
+    // Burns the amount staked.
+    function deposit(uint256 _amount) external nonReentrant {
+        require(_amount >= minStake, "Amount smaller than minimimum deposit");
+        require(
+            balanceOf(msg.sender) >= _amount,
+            "Can't stake more than you own"
+        );
+        if (stakers[msg.sender].deposited == 0) {
+            stakers[msg.sender].deposited = _amount;
+            stakers[msg.sender].timeOfLastUpdate = block.timestamp;
+            stakers[msg.sender].unclaimedRewards = 0;
+        } else {
+            uint256 rewards = calculateRewards(msg.sender);
+            stakers[msg.sender].unclaimedRewards += rewards;
+            stakers[msg.sender].deposited += _amount;
+            stakers[msg.sender].timeOfLastUpdate = block.timestamp;
         }
-
-        // Use the index to push a new Stake
-        // push a newly created Stake with the current block timestamp.
-        stakeholders[index].address_stakes.push(Stake(msg.sender, _amount, timestamp,0));
-        // Emit an event that the stake has occured
-        emit Staked(msg.sender, _amount, index,timestamp);
+        _burn(msg.sender, _amount);
     }
 
-    /**
-      * @notice
-      * calculateStakeReward is used to calculate how much a user should be rewarded for their stakes
-      * and the duration the stake has been active
-     */
-      function calculateStakeReward(Stake memory _current_stake) internal view returns(uint256){
-          // First calculate how long the stake has been active
-          // Use current seconds since epoch - the seconds since epoch the stake was made
-          // The output will be duration in SECONDS ,
-          // We will reward the user 0.1% per Hour So thats 0.1% per 3600 seconds
-          // the alghoritm is  seconds = block.timestamp - stake seconds (block.timestap - _stake.since)
-          // hours = Seconds / 3600 (seconds /3600) 3600 is an variable in Solidity names hours
-          // we then multiply each token by the hours staked , then divide by the rewardPerHour rate 
-          return (((block.timestamp - _current_stake.since) / 1 hours) * _current_stake.amount) / rewardPerHour;
-      }
-
-    /**
-     * @notice
-     * withdrawStake takes in an amount and a index of the stake and will remove tokens from that stake
-     * Notice index of the stake is the users stake counter, starting at 0 for the first stake
-     * Will return the amount to MINT onto the acount
-     * Will also calculateStakeReward and reset timer
-    */
-     function _withdrawStake(uint256 amount, uint256 index) internal returns(uint256){
-         // Grab user_index which is the index to use to grab the Stake[]
-        uint256 user_index = stakes[msg.sender];
-        Stake memory current_stake = stakeholders[user_index].address_stakes[index];
-        require(current_stake.amount >= amount, "Staking: Cannot withdraw more than you have staked");
-
-         // Calculate available Reward first before we start modifying data
-         uint256 reward = calculateStakeReward(current_stake);
-         // Remove by subtracting the money unstaked 
-         current_stake.amount = current_stake.amount - amount;
-         // If stake is empty, 0, then remove it from the array of stakes
-         if(current_stake.amount == 0){
-             delete stakeholders[user_index].address_stakes[index];
-         }else {
-             // If not empty then replace the value of it
-             stakeholders[user_index].address_stakes[index].amount = current_stake.amount;
-             // Reset timer of stake
-            stakeholders[user_index].address_stakes[index].since = block.timestamp;    
-         }
-
-         return amount+reward;
-     }
-
-     /**
-     * @notice
-     * hasStake is used to check if a account has stakes and the total amount along with all the seperate stakes
-     */
-    function hasStake(address _staker) public view returns(StakingSummary memory){
-        // totalStakeAmount is used to count total staked amount of the address
-        uint256 totalStakeAmount; 
-        // Keep a summary in memory since we need to calculate this
-        StakingSummary memory summary = StakingSummary(0, stakeholders[stakes[_staker]].address_stakes);
-        // Itterate all stakes and grab amount of stakes
-        for (uint256 s = 0; s < summary.stakes.length; s += 1){
-           uint256 availableReward = calculateStakeReward(summary.stakes[s]);
-           summary.stakes[s].claimable = availableReward;
-           totalStakeAmount = totalStakeAmount+summary.stakes[s].amount;
-       }
-       // Assign calculate amount to summary
-       summary.total_amount = totalStakeAmount;
-        return summary;
+    // Compound the rewards and reset the last time of update for Deposit info
+    function stakeRewards() external nonReentrant {
+        require(stakers[msg.sender].deposited > 0, "You have no deposit");
+        require(
+            compoundRewardsTimer(msg.sender) == 0,
+            "Tried to compound rewars too soon"
+        );
+        uint256 rewards = calculateRewards(msg.sender) +
+            stakers[msg.sender].unclaimedRewards;
+        stakers[msg.sender].unclaimedRewards = 0;
+        stakers[msg.sender].deposited += rewards;
+        stakers[msg.sender].timeOfLastUpdate = block.timestamp;
     }
 
+    // Mints rewards for msg.sender
+    function claimRewards() external nonReentrant {
+        uint256 rewards = calculateRewards(msg.sender) +
+            stakers[msg.sender].unclaimedRewards;
+        require(rewards > 0, "You have no rewards");
+        stakers[msg.sender].unclaimedRewards = 0;
+        stakers[msg.sender].timeOfLastUpdate = block.timestamp;
+        _mint(msg.sender, rewards);
+    }
+
+    // Withdraw specified amount of staked tokens
+    function withdraw(uint256 _amount) external nonReentrant {
+        require(
+            stakers[msg.sender].deposited >= _amount,
+            "Can't withdraw more than you have"
+        );
+        uint256 _rewards = calculateRewards(msg.sender);
+        stakers[msg.sender].deposited -= _amount;
+        stakers[msg.sender].timeOfLastUpdate = block.timestamp;
+        stakers[msg.sender].unclaimedRewards = _rewards;
+        _mint(msg.sender, _amount);
+    }
+
+    // Withdraw all stake and rewards and mints them to the msg.sender
+    function withdrawAll() external nonReentrant {
+        require(stakers[msg.sender].deposited > 0, "You have no deposit");
+        uint256 _rewards = calculateRewards(msg.sender) +
+            stakers[msg.sender].unclaimedRewards;
+        uint256 _deposit = stakers[msg.sender].deposited;
+        stakers[msg.sender].deposited = 0;
+        stakers[msg.sender].timeOfLastUpdate = 0;
+        uint256 _amount = _rewards + _deposit;
+        _mint(msg.sender, _amount);
+    }
+
+    // Function useful for fron-end that returns user stake and rewards by address
+    function getDepositInfo(address _user)
+        public
+        view
+        returns (uint256 _stake, uint256 _rewards)
+    {
+        _stake = stakers[_user].deposited;
+        _rewards =
+            calculateRewards(_user) +
+            stakers[msg.sender].unclaimedRewards;
+        return (_stake, _rewards);
+    }
+
+    // Utility function that returns the timer for restaking rewards
+    function compoundRewardsTimer(address _user)
+        public
+        view
+        returns (uint256 _timer)
+    {
+        if (stakers[_user].timeOfLastUpdate + compoundFreq <= block.timestamp) {
+            return 0;
+        } else {
+            return
+                (stakers[_user].timeOfLastUpdate + compoundFreq) -
+                block.timestamp;
+        }
+    }
+
+    // Calculate the rewards since the last update on Deposit info
+    function calculateRewards(address _staker)
+        internal
+        view
+        returns (uint256 rewards)
+    {
+        return (((((block.timestamp - stakers[_staker].timeOfLastUpdate) *
+            stakers[_staker].deposited) * rewardsPerHour) / 3600) / 10000000);
+    }
 }
