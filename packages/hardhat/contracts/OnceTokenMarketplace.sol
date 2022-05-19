@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -17,7 +18,14 @@ contract OnceToken is ERC721Enumerable{
   Counters.Counter private _insuredIds;
   address public marketplace;
 
-  constructor () ERC721("OnceToken", "ONCE") {}
+  IERC20 public tokenAddress;
+
+  //TIME tokens required for minting an NFT 
+  uint256 public rate = 100 * 10 ** 18;
+
+  constructor (address _tokenAddress) ERC721("OnceToken", "ONCE") {
+    tokenAddress = IERC20(_tokenAddress);
+  }
 
   //setting a governance oracle/DAO that will grants access for minting Once NFTs
   //So who pass the Once KYC system will have the permission for minting:
@@ -102,6 +110,11 @@ contract OnceToken is ERC721Enumerable{
     _safeMint(msg.sender, newItemId);
     approve(address(this), newItemId);
 
+    //transfer to this contract the minimum amount of Time token required for minting:
+    tokenAddress.transferFrom(msg.sender, address(this), rate);
+
+
+
     Items[newItemId] = Item({
       id: newItemId, 
       creator: msg.sender,
@@ -159,6 +172,7 @@ contract OnceToken is ERC721Enumerable{
     require(msg.sender == ownerGovernance, "Only the ownerGovernance can withdraw!!");
     require(Items[_tokenId].assuranceTriggered == false, "This assurance was already called");
 
+    //here, as we are going to use superfluid, lets set and particular address:
     address payable _to = payable(ownerOf(_tokenId));
 
     uint256 payout = Items[_tokenId].payout - poolFee;
@@ -264,22 +278,8 @@ contract OnceToken is ERC721Enumerable{
         return itemsForSale.length;
     }
 
-
-    function fetchMarketItems() public view returns (ItemForSale[] memory){
-      uint itemCount = _tokenIds.current();
-      uint unsoldItemCount = totalItemsForSale();
-      uint currentIndex = 0;
-
-      ItemForSale[] memory items = new ItemForSale[](unsoldItemCount);
-      for (uint i = 0; i < itemCount; i++) {
-          if (itemsForSale[i + 1].isSold == false) {
-              uint currentId = i + 1;
-              ItemForSale storage currentItem = itemsForSale[currentId];
-              items[currentIndex] = currentItem;
-              currentIndex += 1;
-          }
-      }
-    return items;
-  }
-
+    function withdrawToken() public {
+        require(msg.sender == ownerGovernance, "Only the ownerGovernance can withdraw the tokens.");
+        tokenAddress.transfer(msg.sender, tokenAddress.balanceOf(address(this)));
+    }
 }

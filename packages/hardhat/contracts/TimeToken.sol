@@ -8,7 +8,7 @@ contract TimeToken is ERC20Stakeable, Ownable {
     constructor(string memory _name, string memory _symbol)
         ERC20Stakeable(_name, _symbol)
     {
-        _mint(msg.sender, 1000000 * 10 ** 18);
+        _mint(msg.sender, 10000000 * 10 ** 18);
     }
 
     // Functions for modifying  staking mechanism variables:
