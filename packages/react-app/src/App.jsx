@@ -53,7 +53,7 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.mumbai; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -258,15 +258,15 @@ function App(props) {
       />
       <Menu style={{ textAlign: "center", marginTop: 40 }} selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
-          <Link to="/">App Home</Link>
+          <Link to="/">HOME</Link>
         </Menu.Item>
         <Menu.Item key="/debug">
-          <Link to="/debug">Debug Contracts</Link>
+          <Link to="/debug">TIME TOKEN</Link>
         </Menu.Item>
         <Menu.Item key="/hints">
-          <Link to="/hints">Hints</Link>
+          <Link to="/debug">MARKETPLACE</Link>
         </Menu.Item>
-        <Menu.Item key="/exampleui">
+        {/* <Menu.Item key="/exampleui">
           <Link to="/exampleui">ExampleUI</Link>
         </Menu.Item>
         <Menu.Item key="/mainnetdai">
@@ -274,7 +274,7 @@ function App(props) {
         </Menu.Item>
         <Menu.Item key="/subgraph">
           <Link to="/subgraph">Subgraph</Link>
-        </Menu.Item>
+        </Menu.Item> */}
       </Menu>
 
       <Switch>

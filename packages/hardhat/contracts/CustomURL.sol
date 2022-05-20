@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";

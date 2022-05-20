@@ -13,6 +13,6 @@ export default function Header({ link, title, subTitle }) {
 
 Header.defaultProps = {
   link: "https://github.com/Once-DeFi-Insurance",
-  title: "🫶 Once Defi Insurance",
+  title: "Once Defi Insurance",
   subTitle: "savings for your financial future",
 };
