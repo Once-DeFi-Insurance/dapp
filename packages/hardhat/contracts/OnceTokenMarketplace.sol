@@ -23,13 +23,13 @@ contract OnceToken is ERC721Enumerable{
   //TIME tokens required for minting an NFT 
   uint256 public rate = 100 * 10 ** 18;
 
-  constructor (address _tokenAddress) ERC721("OnceToken", "ONCE") {
+  constructor (address _tokenAddress) ERC721("Extra-Life", "LIFE") {
     tokenAddress = IERC20(_tokenAddress);
   }
 
   //setting a governance oracle/DAO that will grants access for minting Once NFTs
   //So who pass the Once KYC system will have the permission for minting:
-  address public ownerGovernance = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+  address public ownerGovernance = 0x08ADb3400E48cACb7d5a5CB386877B3A159d525C;
 
   //Creating the insured structs:
   struct Insured {
