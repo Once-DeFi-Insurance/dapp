@@ -263,9 +263,12 @@ function App(props) {
         <Menu.Item key="/debug">
           <Link to="/debug">TIME TOKEN</Link>
         </Menu.Item>
-        <Menu.Item key="/hints">
-          <Link to="/debug">MARKETPLACE</Link>
+        <Menu.Item key="/debug">
+          <Link to="/debug">EXTRA LIFE TOKEN</Link>
         </Menu.Item>
+        {/* <Menu.Item key="/hints">
+          <Link to="/debug">MARKETPLACE</Link>
+        </Menu.Item> */}
         {/* <Menu.Item key="/exampleui">
           <Link to="/exampleui">ExampleUI</Link>
         </Menu.Item>
@@ -290,7 +293,7 @@ function App(props) {
             */}
 
           <Contract
-            name="YourContract"
+            name="Ownable.sol"
             price={price}
             signer={userSigner}
             provider={localProvider}
